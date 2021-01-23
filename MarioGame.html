@@ -1,0 +1,737 @@
+<head>
+	<title>Mario Game ^^ </title>
+	<meta charset="UTF-8">
+</head>
+<body>
+<br>
+<canvas id="myCanvas" width="1000" height="500" style="border:1px solid #82CAFF;"></canvas>
+
+<script type="text/javascript">
+
+class Sprite
+{
+	 
+
+	constructor(xm, ym, image_url)
+	{
+		this.x = xm;
+		this.y = ym;
+		this.image = new Image();
+		this.image.src = image_url;
+
+		
+	}
+	onclick()
+	{
+	}
+	update()
+	{
+	}
+
+	draw()
+	{
+	}
+	isTube(){return false;}
+	isMario(){return false;}
+	isGoomba(){return false;}
+	isFireball(){return false;}
+
+
+
+
+	set_destination(x, y)
+	{
+		this.dest_x = x;
+		this.dest_y = y;
+	}
+
+	ignore_click(x, y)
+	{
+	}
+
+	move(dx, dy)
+	{
+		this.dest_x = this.x + dx;
+		this.dest_y = this.y + dy;
+	}
+
+	go_toward_destination()
+	{
+		if(this.dest_x === undefined)
+			return;
+
+		if(this.x < this.dest_x)
+			this.x++;
+		else if(this.x > this.dest_x)
+			this.x--;
+		if(this.y < this.dest_y)
+			this.y++;
+		else if(this.y > this.dest_y)
+			this.y--;
+	}
+
+	sit_still()
+	{
+	}
+}
+
+
+
+
+
+
+class Model
+{
+	constructor()
+	{
+		this.sprites = [];
+		
+		//Commercial
+		this.sprites.push(new Commercial(540, 225, this));
+		this.sprites.push(new Commercial(3000, 192, this));
+		this.sprites.push(new Commercial(4500, 192, this));
+		
+		//Tubes
+		this.sprites.push(new Tube(196, 300, this));
+		this.sprites.push(new Tube(572, 173, this));
+		this.sprites.push(new Tube(1096, 114, this));
+		this.sprites.push(new Tube(1465, 190, this));
+		this.sprites.push(new Tube(1791, 269, this));
+		
+		//Goombas
+		this.sprites.push(new Goombas(332, 244, this));
+		this.sprites.push(new Goombas(427, 82, this));
+		this.sprites.push(new Goombas(731, 241, this));
+		this.sprites.push(new Goombas(940, 225, this));
+		this.sprites.push(new Goombas(1549, 247, this));
+		this.sprites.push(new Goombas(1347, 192, this));
+
+		//Mario
+		this.mario=new Mario(this);
+		this.sprites.push(this.mario);
+
+		
+	
+		
+		
+	}
+	
+	//Standard detection for sprites collusions
+
+	detectSpritesCollusion(spri, s) 
+	{ 
+		
+			
+		if(spri.x+spri.w < s.x) { 
+			return false;
+		}if(spri.x > s.x + s.w) {
+			return false;
+		}
+		if(spri.y + spri.h < s.y) {
+			return false;
+		}else if(spri.y > s.y + s.h) {
+			return false;
+		}else {
+			return true;
+		}
+		
+				
+	}
+	update()
+	{   
+	
+
+
+
+
+		for(let i = 0; i < this.sprites.length; i++)
+		{
+			if(this.sprites[i].isTube())
+			{
+			if (this.detectSpritesCollusion(this.mario,this.sprites[i]) == true)
+			this.mario.bounceFromTube(this.sprites[i]);
+			}
+			this.sprites[i].update();
+			
+		}
+	}
+
+	onclick(x, y)
+	{
+		for(let i = 0; i < this.sprites.length; i++)
+		{
+			this.sprites[i].onclick(x, y);
+		}
+	}
+
+	move(dx, dy)
+	{
+		this.mario.move(dx, dy);
+	}
+	
+
+	
+	//a method to add Fireballs
+		
+	addFireball(mario) 
+	{
+		this.f =new Fireball(mario.x+(mario.w/2),mario.y+(mario.h/2), this);
+		this.sprites.push(this.f);
+		
+		
+	}
+
+}
+
+
+
+
+class View
+{
+	constructor(model)
+	{
+		this.model = model;
+		this.canvas = document.getElementById("myCanvas");
+		this.marioViewLocation=180;// indicates where mario is in the view
+
+
+	}
+	
+
+
+	update()
+	{
+		let ctx = this.canvas.getContext("2d");
+		ctx.clearRect(0, 0, 1000, 500);
+		//background color 
+	   ctx.fillStyle = "#82CAFF";
+	   ctx.fillRect(0,0, 1000,500);
+	   
+	   //Ground
+	   ctx.fillStyle = "#4CC552";
+	   ctx.fillRect(0,400, 1000,150);
+
+		for(let i = 0; i < this.model.sprites.length; i++)
+		{
+			let sprite = this.model.sprites[i];
+			ctx.drawImage(sprite.image, sprite.x-this.model.mario.x+this.marioViewLocation, sprite.y);
+		}
+	}
+}
+
+class Mario extends Sprite
+{
+
+	constructor(model)
+	{
+	super(50,350,"mario1.png");
+	this.model=model;
+	this.pre_x=0; //cordination for previews mario cordinations x,y 
+	this.pre_y=0;
+	
+	this.marioViewLocation=180;// indicates where mario is in the view
+	this.x = 50;
+	this.y = 350;
+	this.h = 95;
+	this.w = 60;
+	this.imageCount=0;
+	this.vert_vel=-2.0; 
+	this.frameCount =0;
+	
+    // create object
+    this.image = new Image();
+	this.image.src="mario1.png";
+
+
+    // set image list
+    this.images = new Array();
+    this.images[0]="mario1.png"
+    this.images[1]="mario2.png"
+    this.images[2]="mario3.png"
+    this.images[3]="mario4.png"
+	this.images[4]="mario5.png"
+
+
+	}
+	isMario(){return true;}
+
+	//Jumping method
+	jump()
+	{    
+		
+		if(this.frameCount<10)
+		this.vert_vel += -10;
+
+ 
+	}
+	
+	//save Mario's previews cordinations
+	marioWasHere()
+	{
+		this.pre_x =this.x;
+		this.pre_y =this.y;
+	}
+	draw()
+	{
+	
+		// start preloading
+     for(var i=0; i<=4; i++) 
+     {
+          this.image.src=this.images[i];
+     }
+	
+	}
+	
+	
+		//to get mario bounce from the tube
+	bounceFromTube(t)
+	{
+		//to detect if there is a tube where Mario is
+		
+		if(this.x+this.w >= t.x && this.pre_x < t.x)
+		{			
+			this.x =t.x - this.w;
+			
+		}
+
+		if(this.x < t.x+ t.w)
+		{
+			this.x = this.pre_x;
+			
+		}
+		if(this.y+this.h >t.y && this.x+this.w > t.x && this.x < t.x+ t.w ) 
+		{   
+			this.y =t.y-this.h-1;
+			this.vert_vel =0.0;
+		
+			
+		}
+
+		if(this.pre_y>t.y+t.h && this.y>t.y ) 
+		{
+			this.y = t.y-t.h;
+		}
+		
+
+		
+	}
+	
+	update()
+	{
+		this.vert_vel += 0.7;
+		this.y += this.vert_vel;
+		this.frameCount++; // incrreamenting the frame counter
+		// to keep mario on the ground level
+		if(this.y>(400-this.h))
+		{
+			this.vert_vel = 0.0;
+			this.y=400-this.h;
+				
+		}
+		if(this.y<0)
+		{
+			this.y=0;
+			this.vert_vel = 7;// will push mario back down, right after he touch y=0
+			
+		}
+		
+		if(this.imageCount>4) // we have only five images 
+		{
+			this.imageCount =0;
+
+			
+		}
+		this.image.src=this.images[this.imageCount];
+		
+	}
+	
+	
+	
+}
+
+class Tube extends Sprite
+{
+
+	constructor( x, y, m)
+	{
+		super(x, y, "tube.png");
+		this.x = x;
+		this.y = y;
+		this.w=55;
+	    this.h=400;
+		this.model = this.m;	
+		this.image =new Image();
+		this.image.src="tube.png";
+
+	}
+	isTube(){return true;}
+
+	update()
+	{
+	}
+	draw()
+	{
+	}	
+}
+class Fireball extends Sprite
+{
+
+	constructor( x,y, m)
+	{	super(x,y,"fireball.png");
+		this.direction=1;
+		this.marioToEdge=790;
+		this.x = x;
+		this.y = y;
+		this.w = 47;
+		this.h = 47;
+		this.model = m;	
+		this.vert_vel =2;
+		this.speed =10;	
+		this.image =new Image();
+		this.image.src="fireball.png";		
+				
+	}
+	isFireball(){return true;}
+	update()
+	{
+		this.vert_vel += 1.7;
+		this.y += this.vert_vel;
+		
+		// the ground level
+		if(this.y>(400-this.h))
+		{
+			this.vert_vel = -20.0;
+			this.y=400-this.h;
+				
+		 }
+		if(this.y<0)
+		{
+			this.y=0;
+			this.vert_vel = 7;
+			
+		}
+		this.x+=this.speed*this.direction;
+		//to remove the fireball after it goes off the screen	
+		//first looping throught the sprites
+		for(var i=0; i<this.model.sprites.length;i++) 
+			
+		{  
+		//if the sprite is fireball
+		 if(this.model.sprites[i].isFireball())
+		  {
+             //if the fireball.x isoff screen, do: remove it
+			if ( this.x==(this.model.mario.x+this.marioToEdge))
+			  {
+				  
+				  this.model.sprites.splice(i,1);
+				  
+
+			  }
+		  }
+		}
+
+
+	}
+	
+	
+	draw()
+	{
+
+	}
+	
+	
+}
+
+class Goombas extends Sprite
+{
+
+ 
+	
+	constructor(x, y, m)
+	{	
+		super(x,y,"goomba.png");
+		this.isOnFire =false;
+		this.CountinFire =0;
+		
+		this.x = x;
+		this.y = y;
+		this.w = 99;
+		this.h = 118;
+		this.speed =5;
+		this.vert_vel =1.2;
+		this.direction =1;
+		this.curr_direction=this.direction;
+		this.model = m;
+		this.image =new Image();
+		this.image.src="goomba.png";
+		this.image2 =new Image();
+		this.image2.src="goomba_fire.png";	
+		this.curr_img = new Image();
+		this.curr_img.src = "goomba.png";
+		
+	}
+	isGoomba(){return true;}
+	update()
+	{
+		this.vert_vel += 0.7;
+		this.y += this.vert_vel;
+		
+		// to keep goombas on the ground level
+		if(this.y>(400-this.h))
+		{
+			this.vert_vel = 0.0;
+			this.y=400-this.h;
+				
+		}
+		this.x+=this.speed*this.direction;
+		
+		
+		// this for loop looping throught the sprites
+		for(var i=0; i<this.model.sprites.length;i++) 
+			
+		{  
+			if(this.model.sprites[i].isTube())
+			{
+				this.curr_direction = this.direction;
+			if (this.model.detectSpritesCollusion(this,this.model.sprites[i]) == true)
+			{	
+				if(this.curr_direction==1){
+					this.direction = -1;
+				}
+				if(this.curr_direction==-1)
+				{
+					this.direction =1;
+					
+				}
+			}
+			
+			}
+					
+
+			//if it is gommba with fireball
+			else if(this.model.sprites[i].isFireball())
+			{
+				
+			if (this.model.detectSpritesCollusion(this,this.model.sprites[i]) == true)
+			{	
+			//load goomba in fire image
+						this.isOnFire =true;
+						this.image2.src="goomba_fire.png";
+
+					
+			}
+
+			
+			}
+			
+			//to remove goombafire if it is in fire for 5 or more fram count
+			if(this.isOnFire == true && this.CountinFire >=5)
+			{ 
+		       //if it is goombafire remove it
+				if(this.model.sprites[i].isGoomba())
+				{ 
+					this.model.sprites.splice(i,1);
+					
+					
+					this.CountinFire=0;
+					
+
+				}
+			}
+	    }
+						
+	this.draw();
+
+	}
+	
+	draw()
+	{
+	if(this.isOnFire ==false)
+	{
+		this.image.src=this.curr_img.src;
+
+	}
+			  
+    else
+	{
+		this.image.src=this.image2.src;
+
+		this.CountinFire++;
+
+	}
+			
+	}
+}
+
+
+class Commercial extends Sprite
+{
+
+ 
+	
+	constructor(x, y, m)
+	{	
+		super(x,y,"commercial.png");
+		this.isOnFire =false;
+		this.CountinFire =0;
+		
+		this.x = x;
+		this.y = y;
+		this.w = 500;
+		this.h = 136;
+		this.speed =5;
+		this.vert_vel =1.2;
+		this.direction =1;
+		this.curr_direction=this.direction;
+		this.model = m;
+		this.image =new Image();
+		this.image.src="commercial.png";
+	
+
+		
+	}
+	
+	update()
+	{
+		this.vert_vel = 0.0;
+		
+		// to keep goombas on the sky level
+
+		this.y=150-this.h;
+				
+		this.x+=-this.speed;
+		
+
+	}
+	
+	draw()
+	{
+
+	
+
+			
+	}
+}
+
+
+class Controller
+{
+	constructor(model, view)
+	{
+		this.model = model;
+		this.view = view;
+		this.key_right = false;
+		this.key_left = false;
+		this.key_up = false;
+		this.key_down = false;
+		this.key_spacebar =false;
+		this.key_ctrl =false;
+		let self = this;
+		view.canvas.addEventListener("click", function(event) { self.onClick(event); });
+		document.addEventListener('keydown', function(event) { self.keyDown(event); }, false);
+		document.addEventListener('keyup', function(event) { self.keyUp(event); }, false);
+	}
+
+	onClick(event)
+	{
+		this.model.onclick(event.pageX - this.view.canvas.offsetLeft, event.pageY - this.view.canvas.offsetTop);
+
+	}
+	
+
+
+	keyDown(event)
+	{
+		if(event.keyCode == 39) this.key_right = true;
+		else if(event.keyCode == 37) this.key_left = true;
+		else if(event.keyCode == 38) this.key_up = true;
+		else if(event.keyCode == 40) this.key_down = true;
+		else if(event.keyCode == 32) this.key_spacebar =true;
+		else if(event.keyCode == 17) this.key_ctrl =true;
+		
+
+	}
+
+	keyUp(event)
+	{
+	
+		if(event.keyCode == 39) this.key_right = false;
+		else if(event.keyCode == 37) this.key_left = false;
+		else if(event.keyCode == 38) this.key_up = false;
+		else if(event.keyCode == 40) this.key_down = false;
+		else if(event.keyCode == 32) this.key_spacebar =false;
+		else if(event.keyCode == 17) this.key_ctrl =false;
+		
+	}
+
+
+	update()
+	{
+		this.model.mario.marioWasHere();
+		let dx = 0;
+		let dy = 0;
+		//to move Mario
+		if(this.key_right)
+		{   
+	       	this.model.mario.x=this.model.mario.x+6;
+			this.model.mario.imageCount++;
+		}
+		if(this.key_left) 
+		{	
+			this.model.mario.x=this.model.mario.x-6;
+			this.model.mario.imageCount++;
+			
+		}
+
+
+		if(this.key_spacebar)
+		{
+		
+		this.model.mario.jump();
+		}
+
+	
+		
+		if (this.model.mario.vert_vel==0) this.model.mario.frameCount=0;
+		
+		if(this.key_ctrl)
+		{
+				
+		this.model.addFireball(this.model.mario);
+		}
+		
+		//un comment the next line if you want mario to throw just one fireball each click 
+		this.key_ctrl =false;
+	}
+	
+	
+}
+
+
+
+
+
+class Game
+{
+	constructor()
+	{
+		this.model = new Model();
+		this.view = new View(this.model);
+		this.controller = new Controller(this.model, this.view);
+	}
+
+	onTimer()
+	{
+		this.controller.update();
+		this.model.update();
+		this.view.update();
+	}
+}
+
+
+let game = new Game();
+let timer = setInterval(function() { game.onTimer(); }, 40);
+
+</script>
+
+</body>
